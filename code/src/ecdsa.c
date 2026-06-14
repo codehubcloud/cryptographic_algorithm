@@ -170,7 +170,7 @@ int ECDSA_Verify(const u8* hash, size_t hashLen, const ECDSA_Signature_S* sig, c
     u32 sInv = ECDSA_ModInverse32(sigS, orderN);
     u32 u1 = ECDSA_ModMul32(hashVal, sInv, orderN);
     u32 u2 = ECDSA_ModMul32(sigR, sInv, orderN);
-    u32 x1 = ECDSA_ModAdd32(ECDSA_ModMul32(u1, g_ecdsaP256Gx[0], primeP), ECDSA_ModMul32(u2, context->publicKeyX[0], primeP));
+    u32 x1 = ECDSA_ModAdd32(ECDSA_ModMul32(u1, g_ecdsaP256Gx[0], primeP), ECDSA_ModMul32(u2, context->publicKeyX[0], primeP), primeP);
     u32 verifyV = x1 % orderN;
     return (verifyV == sigR) ? 1 : 0;
 }
