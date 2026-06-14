@@ -12,7 +12,7 @@
 /* MD5 初始状态值 */
 static const u32 g_md5InitA = 0x67452301UL;
 static const u32 g_md5InitB = 0xEFCDAB89UL;
-static const u32 g_md5InitC = 0x98BADCFEFUL;
+static const u32 g_md5InitC = (u32)0x98BADCFEUL;
 static const u32 g_md5InitD = 0x10325476UL;
 
 /* MD5 正弦表（第 i 项值为 floor(2^32 * abs(sin(i+1)))）*/

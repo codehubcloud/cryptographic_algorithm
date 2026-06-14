@@ -14,6 +14,7 @@
 
 typedef uint8_t u8;
 typedef uint32_t u32;
+typedef uint64_t u64;
 
 /* SM3 上下文结构体 */
 typedef struct {
