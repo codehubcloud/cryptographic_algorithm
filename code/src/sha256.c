@@ -9,24 +9,18 @@
 #include <string.h>
 #include "include/sha256.h"
 
-
 /* SHA-256 初始哈希值 */
-static const u32 g_sha256InitValues[8] = {
-    0x6A09E667UL, 0xBB67AE85UL, 0x3C6EF372UL, 0xA54FF53AUL,
-    0x510E527FUL, 0x9B05688CUL, 0x1F83D9ABUL, 0x5BE0CD19UL
-};
+static const u32 g_sha256InitValues[8] = {0x6A09E667UL, 0xBB67AE85UL, 0x3C6EF372UL, 0xA54FF53AUL, 0x510E527FUL, 0x9B05688CUL, 0x1F83D9ABUL, 0x5BE0CD19UL};
 
 /* SHA-256 常数表 */
-static const u32 g_sha256Constants[64] = {
-    0x428A2F98UL, 0x71374491UL, 0xB5C0FBCFUL, 0xE9B5DBA5UL, 0x3956C25BUL, 0x59F111F1UL, 0x923F82A4UL, 0xAB1C5ED5UL,
-    0xD807AA98UL, 0x12835B01UL, 0x243185BEUL, 0x550C7DC3UL, 0x72BE5D74UL, 0x80DEB1FEUL, 0x9BDC06A7UL, 0xC19BF174UL,
-    0xE49B69C1UL, 0xEFBE4786UL, 0x0FC19DC6UL, 0x240CA1CCUL, 0x2DE92C6FUL, 0x4A7484AAUL, 0x5CB0A9DCUL, 0x76F988DAUL,
-    0x983E5152UL, 0xA831C66DUL, 0xB00327C8UL, 0xBF597FC7UL, 0xC6E00BF3UL, 0xD5A79147UL, 0x06CA6351UL, 0x14292967UL,
-    0x27B70A85UL, 0x2E1B2138UL, 0x4D2C6DFCUL, 0x53380D13UL, 0x650A7354UL, 0x766A0ABBUL, 0x81C2C92EUL, 0x92722C85UL,
-    0xA2BFE8A1UL, 0xA81A664BUL, 0xC24B8B70UL, 0xC76C51A3UL, 0xD192E819UL, 0xD6990624UL, 0xF40E3585UL, 0x106AA070UL,
-    0x19A4C116UL, 0x1E376C08UL, 0x2748774CUL, 0x34B0BCB5UL, 0x391C0CB3UL, 0x4ED8AA4AUL, 0x5B9CCA4FUL, 0x682E6FF3UL,
-    0x748F82EEUL, 0x78A5636FUL, 0x84C87814UL, 0x8CC70208UL, 0x90BEFFFAUL, 0xA4506CEBUL, 0xBEF9A3F7UL, 0xC67178F2UL
-};
+static const u32 g_sha256Constants[64] = {0x428A2F98UL, 0x71374491UL, 0xB5C0FBCFUL, 0xE9B5DBA5UL, 0x3956C25BUL, 0x59F111F1UL, 0x923F82A4UL, 0xAB1C5ED5UL,
+                                          0xD807AA98UL, 0x12835B01UL, 0x243185BEUL, 0x550C7DC3UL, 0x72BE5D74UL, 0x80DEB1FEUL, 0x9BDC06A7UL, 0xC19BF174UL,
+                                          0xE49B69C1UL, 0xEFBE4786UL, 0x0FC19DC6UL, 0x240CA1CCUL, 0x2DE92C6FUL, 0x4A7484AAUL, 0x5CB0A9DCUL, 0x76F988DAUL,
+                                          0x983E5152UL, 0xA831C66DUL, 0xB00327C8UL, 0xBF597FC7UL, 0xC6E00BF3UL, 0xD5A79147UL, 0x06CA6351UL, 0x14292967UL,
+                                          0x27B70A85UL, 0x2E1B2138UL, 0x4D2C6DFCUL, 0x53380D13UL, 0x650A7354UL, 0x766A0ABBUL, 0x81C2C92EUL, 0x92722C85UL,
+                                          0xA2BFE8A1UL, 0xA81A664BUL, 0xC24B8B70UL, 0xC76C51A3UL, 0xD192E819UL, 0xD6990624UL, 0xF40E3585UL, 0x106AA070UL,
+                                          0x19A4C116UL, 0x1E376C08UL, 0x2748774CUL, 0x34B0BCB5UL, 0x391C0CB3UL, 0x4ED8AA4AUL, 0x5B9CCA4FUL, 0x682E6FF3UL,
+                                          0x748F82EEUL, 0x78A5636FUL, 0x84C87814UL, 0x8CC70208UL, 0x90BEFFFAUL, 0xA4506CEBUL, 0xBEF9A3F7UL, 0xC67178F2UL};
 
 /******************************************************************************
  * @brief      : 32-bit 循环右移操作
@@ -61,12 +55,10 @@ static inline u32 SHA256_RightShift(u32 value, int count)
  ******************************************************************************/
 static inline u32 SHA256_ScheduleExtend(const u32 scheduleWord[16], int wordIdx)
 {
-    u32 s0 = SHA256_RightRotate(scheduleWord[(wordIdx - 15) & 0x0F], 7) ^
-             SHA256_RightRotate(scheduleWord[(wordIdx - 15) & 0x0F], 18) ^
-             SHA256_RightShift(scheduleWord[(wordIdx - 15) & 0x0F], 3);
-    u32 s1 = SHA256_RightRotate(scheduleWord[(wordIdx - 2) & 0x0F], 17) ^
-             SHA256_RightRotate(scheduleWord[(wordIdx - 2) & 0x0F], 19) ^
-             SHA256_RightShift(scheduleWord[(wordIdx - 2) & 0x0F], 10);
+    u32 s0 = SHA256_RightRotate(scheduleWord[(wordIdx - 15) & 0x0F], 7) ^ SHA256_RightRotate(scheduleWord[(wordIdx - 15) & 0x0F], 18)
+             ^ SHA256_RightShift(scheduleWord[(wordIdx - 15) & 0x0F], 3);
+    u32 s1 = SHA256_RightRotate(scheduleWord[(wordIdx - 2) & 0x0F], 17) ^ SHA256_RightRotate(scheduleWord[(wordIdx - 2) & 0x0F], 19)
+             ^ SHA256_RightShift(scheduleWord[(wordIdx - 2) & 0x0F], 10);
     return scheduleWord[(wordIdx - 16) & 0x0F] + s0 + scheduleWord[(wordIdx - 7) & 0x0F] + s1;
 }
 
@@ -127,8 +119,7 @@ static inline u32 SHA256_Choose(u32 valX, u32 valY, u32 valZ)
  ******************************************************************************/
 static inline u32 SHA256_BytesToWord(const u8 data[4])
 {
-    return (((u32)data[0]) << 24) | (((u32)data[1]) << 16) |
-           (((u32)data[2]) << 8) | ((u32)data[3]);
+    return (((u32)data[0]) << 24) | (((u32)data[1]) << 16) | (((u32)data[2]) << 8) | ((u32)data[3]);
 }
 
 /******************************************************************************
@@ -175,9 +166,8 @@ static void SHA256_ProcessBlock(const u8 blockData[64], SHA256_Context_S* contex
             scheduleWord[round & 0x0F] = word;
         }
 
-        u32 tempValue1 = stateValues[7] + SHA256_CapitalSigma1(stateValues[4]) +
-                        SHA256_Choose(stateValues[4], stateValues[5], stateValues[6]) +
-                        g_sha256Constants[round] + word;
+        u32 tempValue1 = stateValues[7] + SHA256_CapitalSigma1(stateValues[4]) + SHA256_Choose(stateValues[4], stateValues[5], stateValues[6])
+                         + g_sha256Constants[round] + word;
         u32 tempValue2 = SHA256_CapitalSigma0(stateValues[0]) + SHA256_Majority(stateValues[0], stateValues[1], stateValues[2]);
 
         stateValues[7] = stateValues[6];

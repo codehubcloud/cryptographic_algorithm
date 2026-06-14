@@ -12,17 +12,16 @@
 #include <stddef.h>
 #include <stdint.h>
 
-
 typedef uint8_t u8;
 typedef uint32_t u32;
 typedef uint64_t u64;
 
 /* SHA-256 上下文结构体 */
 typedef struct {
-    u32 state[8];          /* SHA-256 状态变量 (H0-H7) */
-    u64 bitCount;          /* 已处理的总比特数 */
-    u8 buffer[64];         /* 数据缓冲区 */
-    size_t bufferLen;      /* 缓冲区中的字节数 */
+    u32 state[8];     /* SHA-256 状态变量 (H0-H7) */
+    u64 bitCount;     /* 已处理的总比特数 */
+    u8 buffer[64];    /* 数据缓冲区 */
+    size_t bufferLen; /* 缓冲区中的字节数 */
 } SHA256_Context_S;
 
 /******************************************************************************

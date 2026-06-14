@@ -9,25 +9,17 @@
 #include <string.h>
 #include "include/ecdsa.h"
 
-static const u32 g_ecdsaP256P[ECDSA_WORD_SIZE] = {
-    0xFFFFFFFFUL, 0xFFFFFFFFUL, 0xFFFFFFFFUL, 0x00000000UL,
-    0xFFFFFFFFUL, 0xFFFFFFFFUL, 0xFFFFFFFFUL, 0xFFFFFFFFUL
-};
+static const u32 g_ecdsaP256P[ECDSA_WORD_SIZE] = {0xFFFFFFFFUL, 0xFFFFFFFFUL, 0xFFFFFFFFUL, 0x00000000UL,
+                                                  0xFFFFFFFFUL, 0xFFFFFFFFUL, 0xFFFFFFFFUL, 0xFFFFFFFFUL};
 
-static const u32 g_ecdsaP256N[ECDSA_WORD_SIZE] = {
-    0xFFFFFFFFUL, 0xFFFFFFFFUL, 0xFFFFFFFFUL, 0xFFFFFFFEUL,
-    0xBCE6FAADUL, 0xA7179E84UL, 0xF3B9CAC2UL, 0xFC632551UL
-};
+static const u32 g_ecdsaP256N[ECDSA_WORD_SIZE] = {0xFFFFFFFFUL, 0xFFFFFFFFUL, 0xFFFFFFFFUL, 0xFFFFFFFEUL,
+                                                  0xBCE6FAADUL, 0xA7179E84UL, 0xF3B9CAC2UL, 0xFC632551UL};
 
-static const u32 g_ecdsaP256Gx[ECDSA_WORD_SIZE] = {
-    0xF8BCE6E5UL, 0x6340F277UL, 0x037D812DUL, 0xEB33A0F4UL,
-    0xA13945D8UL, 0x98C296UL, 0x6B17D1F2UL, 0xE12C4247UL
-};
+static const u32 g_ecdsaP256Gx[ECDSA_WORD_SIZE] = {0xF8BCE6E5UL, 0x6340F277UL, 0x037D812DUL, 0xEB33A0F4UL,
+                                                   0xA13945D8UL, 0x98C296UL,   0x6B17D1F2UL, 0xE12C4247UL};
 
-static const u32 g_ecdsaP256Gy[ECDSA_WORD_SIZE] = {
-    0x7F9B8EE7UL, 0xEB4A7C0FUL, 0x9E162BCEUL, 0x33576B31UL,
-    0xECECBB64UL, 0x6837BF51UL, 0x4FE342E2UL, 0xFE1A7F9BUL
-};
+static const u32 g_ecdsaP256Gy[ECDSA_WORD_SIZE] = {0x7F9B8EE7UL, 0xEB4A7C0FUL, 0x9E162BCEUL, 0x33576B31UL,
+                                                   0xECECBB64UL, 0x6837BF51UL, 0x4FE342E2UL, 0xFE1A7F9BUL};
 
 static u32 g_ecdsaRandState = 0xCAFEBABEUL;
 
@@ -178,8 +170,7 @@ int ECDSA_Verify(const u8* hash, size_t hashLen, const ECDSA_Signature_S* sig, c
     u32 sInv = ECDSA_ModInverse32(sigS, orderN);
     u32 u1 = ECDSA_ModMul32(hashVal, sInv, orderN);
     u32 u2 = ECDSA_ModMul32(sigR, sInv, orderN);
-    u32 x1 = ECDSA_ModAdd32(ECDSA_ModMul32(u1, g_ecdsaP256Gx[0], primeP),
-                              ECDSA_ModMul32(u2, context->publicKeyX[0], primeP));
+    u32 x1 = ECDSA_ModAdd32(ECDSA_ModMul32(u1, g_ecdsaP256Gx[0], primeP), ECDSA_ModMul32(u2, context->publicKeyX[0], primeP));
     u32 verifyV = x1 % orderN;
     return (verifyV == sigR) ? 1 : 0;
 }

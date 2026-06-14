@@ -6,29 +6,17 @@
  * Date      : 2026/06/13
  ******************************************************************************/
 
-#include <string.h>
 #include <stdint.h>
+#include <string.h>
 #include "include/sm2.h"
 
-static const u32 g_sm2Prime[SM2_WORD_SIZE] = {
-    0xFFFFFFFFUL, 0xFFFFFFFFUL, 0x00000000UL, 0xFFFFFFFFUL,
-    0xFFFFFFFFUL, 0xFFFFFFFFUL, 0xFFFFFFFFUL, 0xFFFFFFFEUL
-};
+static const u32 g_sm2Prime[SM2_WORD_SIZE] = {0xFFFFFFFFUL, 0xFFFFFFFFUL, 0x00000000UL, 0xFFFFFFFFUL, 0xFFFFFFFFUL, 0xFFFFFFFFUL, 0xFFFFFFFFUL, 0xFFFFFFFEUL};
 
-static const u32 g_sm2GenGx[SM2_WORD_SIZE] = {
-    0x7C74C743UL, 0x1F198119UL, 0x2C1F1981UL, 0x9948FE30UL,
-    0xBBFF2660UL, 0xBE1715A4UL, 0x589334C7UL, 0x32C4AE2CUL
-};
+static const u32 g_sm2GenGx[SM2_WORD_SIZE] = {0x7C74C743UL, 0x1F198119UL, 0x2C1F1981UL, 0x9948FE30UL, 0xBBFF2660UL, 0xBE1715A4UL, 0x589334C7UL, 0x32C4AE2CUL};
 
-static const u32 g_sm2GenGy[SM2_WORD_SIZE] = {
-    0x474002DFUL, 0x2F4F6779UL, 0x59BDCEE3UL, 0x6B692153UL,
-    0xD0A9877CUL, 0xC62A4740UL, 0x139F0A0AUL, 0xBC3736A2UL
-};
+static const u32 g_sm2GenGy[SM2_WORD_SIZE] = {0x474002DFUL, 0x2F4F6779UL, 0x59BDCEE3UL, 0x6B692153UL, 0xD0A9877CUL, 0xC62A4740UL, 0x139F0A0AUL, 0xBC3736A2UL};
 
-static const u32 g_sm2Order[SM2_WORD_SIZE] = {
-    0xFFFFFFFFUL, 0xFFFFFFFFUL, 0x00000000UL, 0xFFFFFFFFUL,
-    0x7203DF6BUL, 0xFFFFFFFFUL, 0xFFFFFFFFUL, 0xFFFFFFFEUL
-};
+static const u32 g_sm2Order[SM2_WORD_SIZE] = {0xFFFFFFFFUL, 0xFFFFFFFFUL, 0x00000000UL, 0xFFFFFFFFUL, 0x7203DF6BUL, 0xFFFFFFFFUL, 0xFFFFFFFFUL, 0xFFFFFFFEUL};
 
 static u32 g_sm2RandState = 0xDEADBEEFUL;
 
@@ -181,8 +169,7 @@ int SM2_Verify(const u8* hash, size_t hashLen, const SM2_Signature_S* sig, const
     u32 sInv = SM2_ModInverse32(sigS, orderN);
     u32 u1 = SM2_ModMul32(hashVal, sInv, orderN);
     u32 u2 = SM2_ModMul32(sigR, sInv, orderN);
-    u32 x1 = SM2_ModAdd32(SM2_ModMul32(u1, g_sm2GenGx[0], g_sm2Prime[0]),
-                           SM2_ModMul32(u2, context->publicKeyX[0], g_sm2Prime[0]));
+    u32 x1 = SM2_ModAdd32(SM2_ModMul32(u1, g_sm2GenGx[0], g_sm2Prime[0]), SM2_ModMul32(u2, context->publicKeyX[0], g_sm2Prime[0]));
     u32 verifyV = (hashVal + x1) % orderN;
     return (verifyV == sigR) ? 1 : 0;
 }

@@ -9,7 +9,6 @@
 #include <string.h>
 #include "include/md5.h"
 
-
 /* MD5 初始状态值 */
 static const u32 g_md5InitA = 0x67452301UL;
 static const u32 g_md5InitB = 0xEFCDAB89UL;
@@ -17,40 +16,23 @@ static const u32 g_md5InitC = 0x98BADCFEFUL;
 static const u32 g_md5InitD = 0x10325476UL;
 
 /* MD5 正弦表（第 i 项值为 floor(2^32 * abs(sin(i+1)))）*/
-static const u32 g_md5SineTable[64] = {
-    0xD76AA478UL, 0xE8C7B756UL, 0x242070DBUL, 0xC1BDCEEEUL,
-    0xF57C0FAFUL, 0x4787C62AUL, 0xA8304613UL, 0xFD469501UL,
-    0x698098D8UL, 0x8B44F7AFUL, 0xFFFF5BB1UL, 0x895CD7BEUL,
-    0x6B901122UL, 0xFD987193UL, 0xA679438EUL, 0x49B40821UL,
-    0xF61E2562UL, 0xC040B340UL, 0x265E5A51UL, 0xE9B6C7AAUL,
-    0xD62F105DUL, 0x02441453UL, 0xD8A1E681UL, 0xE7D3FBC8UL,
-    0x21E1CDE6UL, 0xC33707D6UL, 0xF4D50D87UL, 0x455A14EDUL,
-    0xA9E3E905UL, 0xFCEFA3F8UL, 0x676F02D9UL, 0x8D2A4C8AUL,
-    0xFFFA3942UL, 0x8771F681UL, 0x6D9D6122UL, 0xFDE5380CUL,
-    0xA4BEEA44UL, 0x4BDECFA9UL, 0xF6BB4B60UL, 0xBEBFBC70UL,
-    0x289B7EC6UL, 0xEAA127FAUL, 0xD4EF3085UL, 0x04881D05UL,
-    0xD9D4D039UL, 0xE6DB99E5UL, 0x1FA27CF8UL, 0xC4AC5665UL,
-    0xF4292244UL, 0x432AFF97UL, 0xAB9423A7UL, 0xFC93A039UL,
-    0x655B59C3UL, 0x8F0CCC92UL, 0xFFEFF47DUL, 0x85845DD1UL,
-    0x6FA87E4FUL, 0xFE2CE6E0UL, 0xA3014314UL, 0x4E0811A1UL,
-    0xF7537E82UL, 0xBD3AF235UL, 0x2AD7D2BBUL, 0xEB86D391UL
-};
+static const u32 g_md5SineTable[64] = {0xD76AA478UL, 0xE8C7B756UL, 0x242070DBUL, 0xC1BDCEEEUL, 0xF57C0FAFUL, 0x4787C62AUL, 0xA8304613UL, 0xFD469501UL,
+                                       0x698098D8UL, 0x8B44F7AFUL, 0xFFFF5BB1UL, 0x895CD7BEUL, 0x6B901122UL, 0xFD987193UL, 0xA679438EUL, 0x49B40821UL,
+                                       0xF61E2562UL, 0xC040B340UL, 0x265E5A51UL, 0xE9B6C7AAUL, 0xD62F105DUL, 0x02441453UL, 0xD8A1E681UL, 0xE7D3FBC8UL,
+                                       0x21E1CDE6UL, 0xC33707D6UL, 0xF4D50D87UL, 0x455A14EDUL, 0xA9E3E905UL, 0xFCEFA3F8UL, 0x676F02D9UL, 0x8D2A4C8AUL,
+                                       0xFFFA3942UL, 0x8771F681UL, 0x6D9D6122UL, 0xFDE5380CUL, 0xA4BEEA44UL, 0x4BDECFA9UL, 0xF6BB4B60UL, 0xBEBFBC70UL,
+                                       0x289B7EC6UL, 0xEAA127FAUL, 0xD4EF3085UL, 0x04881D05UL, 0xD9D4D039UL, 0xE6DB99E5UL, 0x1FA27CF8UL, 0xC4AC5665UL,
+                                       0xF4292244UL, 0x432AFF97UL, 0xAB9423A7UL, 0xFC93A039UL, 0x655B59C3UL, 0x8F0CCC92UL, 0xFFEFF47DUL, 0x85845DD1UL,
+                                       0x6FA87E4FUL, 0xFE2CE6E0UL, 0xA3014314UL, 0x4E0811A1UL, 0xF7537E82UL, 0xBD3AF235UL, 0x2AD7D2BBUL, 0xEB86D391UL};
 
 /* MD5 轮次中的 k 索引（指示消息字块 X[k]）*/
-static const int g_md5RoundIndices[64] = {
-    0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,
-    1,6,11,0,5,10,15,4,9,14,3,8,13,2,7,12,
-    5,8,11,14,1,4,7,10,13,0,3,6,9,12,15,2,
-    0,7,14,5,12,3,10,1,8,15,6,13,4,11,2,9
-};
+static const int g_md5RoundIndices[64] = {0, 1, 2,  3,  4, 5, 6, 7,  8,  9, 10, 11, 12, 13, 14, 15, 1, 6, 11, 0, 5,  10, 15, 4, 9, 14, 3, 8,  13, 2,  7, 12,
+                                          5, 8, 11, 14, 1, 4, 7, 10, 13, 0, 3,  6,  9,  12, 15, 2,  0, 7, 14, 5, 12, 3,  10, 1, 8, 15, 6, 13, 4,  11, 2, 9};
 
 /* MD5 移位计数表 */
-static const int g_md5ShiftCounts[64] = {
-    7,12,17,22,7,12,17,22,7,12,17,22,7,12,17,22,
-    5,9,14,20,5,9,14,20,5,9,14,20,5,9,14,20,
-    4,11,16,23,4,11,16,23,4,11,16,23,4,11,16,23,
-    6,10,15,21,6,10,15,21,6,10,15,21,6,10,15,21
-};
+static const int g_md5ShiftCounts[64] = {7,  12, 17, 22, 7,  12, 17, 22, 7,  12, 17, 22, 7,  12, 17, 22, 5,  9,  14, 20, 5,  9,
+                                         14, 20, 5,  9,  14, 20, 5,  9,  14, 20, 4,  11, 16, 23, 4,  11, 16, 23, 4,  11, 16, 23,
+                                         4,  11, 16, 23, 6,  10, 15, 21, 6,  10, 15, 21, 6,  10, 15, 21, 6,  10, 15, 21};
 
 /******************************************************************************
  * @brief      : 32-bit 循环左移操作
@@ -121,8 +103,7 @@ static inline u32 MD5_I(u32 valX, u32 valY, u32 valZ)
  ******************************************************************************/
 static inline u32 MD5_BytesToWord(const u8 input[4])
 {
-    return ((u32)input[0]) | (((u32)input[1]) << 8) |
-           (((u32)input[2]) << 16) | (((u32)input[3]) << 24);
+    return ((u32)input[0]) | (((u32)input[1]) << 8) | (((u32)input[2]) << 16) | (((u32)input[3]) << 24);
 }
 
 /******************************************************************************

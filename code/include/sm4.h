@@ -12,13 +12,12 @@
 #include <stddef.h>
 #include <stdint.h>
 
-
 typedef uint8_t u8;
 typedef uint32_t u32;
 
 /* SM4 密钥调度上下文结构体 */
 typedef struct {
-    u32 roundKey[32];      /* 32 轮密钥 */
+    u32 roundKey[32]; /* 32 轮密钥 */
 } SM4_Context_S;
 
 /******************************************************************************

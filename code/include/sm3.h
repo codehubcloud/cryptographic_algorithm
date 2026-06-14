@@ -12,16 +12,15 @@
 #include <stddef.h>
 #include <stdint.h>
 
-
 typedef uint8_t u8;
 typedef uint32_t u32;
 
 /* SM3 上下文结构体 */
 typedef struct {
-    u32 state[8];          /* SM3 状态变量 (V0-V7) */
-    u64 bitCount;          /* 已处理的总比特数 */
-    u8 buffer[64];         /* 数据缓冲区 */
-    size_t bufferLen;      /* 缓冲区中的字节数 */
+    u32 state[8];     /* SM3 状态变量 (V0-V7) */
+    u64 bitCount;     /* 已处理的总比特数 */
+    u8 buffer[64];    /* 数据缓冲区 */
+    size_t bufferLen; /* 缓冲区中的字节数 */
 } SM3_Context_S;
 
 /******************************************************************************

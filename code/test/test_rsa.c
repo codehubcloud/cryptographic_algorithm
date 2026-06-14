@@ -22,8 +22,7 @@ int main(void)
     RSA_Context_S context;
     RSA_GenerateKey(32, &context);
 
-    printf("RSA key generated: n=0x%08X, e=%u, d=0x%08X\n",
-           context.modulus[0], context.publicExp, context.privateExp[0]);
+    printf("RSA key generated: n=0x%08X, e=%u, d=0x%08X\n", context.modulus[0], context.publicExp, context.privateExp[0]);
 
     u8 plaintext[] = {0x00, 0x01, 0x02, 0x03};
     u8 ciphertext[4] = {0};

@@ -12,15 +12,14 @@
 #include <stddef.h>
 #include <stdint.h>
 
-
 typedef uint8_t u8;
 typedef uint32_t u32;
 
 /* MD5 上下文结构体 */
 typedef struct {
-    u32 state[4];          /* MD5 状态变量 (A,B,C,D) */
-    u32 count[2];          /* 比特计数 (低, 高) */
-    u8 buffer[64];         /* 数据缓冲区 */
+    u32 state[4];  /* MD5 状态变量 (A,B,C,D) */
+    u32 count[2];  /* 比特计数 (低, 高) */
+    u8 buffer[64]; /* 数据缓冲区 */
 } MD5_Context_S;
 
 /******************************************************************************
@@ -60,4 +59,3 @@ void MD5_Final(u8 digest[16], MD5_Context_S* context);
 void MD5_Hash(const u8* input, size_t inputLen, u8 digest[16]);
 
 #endif /* CODE_MD5_H */
-
