@@ -128,7 +128,7 @@ static inline void MD5_WordToBytes(u8 output[4], u32 value)
  * @return     : 无
  * @note       : 内部函数，执行 MD5 主循环 64 轮
  ******************************************************************************/
-static void MD5_ProcessBlock(u8 data[64], MD5_Context_S* context)
+static void MD5_ProcessBlock(const u8 data[64], MD5_Context_S* context)
 {
     u32 msgWord[16];
     for (int i = 0; i < 16; ++i) {
@@ -202,6 +202,8 @@ void MD5_Update(MD5_Context_S* context, const u8* input, size_t inputLen)
         return;
     }
 
+    size_t bufferIndex = (context->count[0] >> 3) & 0x3F;
+
     u32 bitCount[2];
     bitCount[0] = (u32)(inputLen << 3);
     bitCount[1] = (u32)(inputLen >> 29);
@@ -212,7 +214,6 @@ void MD5_Update(MD5_Context_S* context, const u8* input, size_t inputLen)
     context->count[0] += bitCount[0];
     context->count[1] += bitCount[1];
 
-    int bufferIndex = (context->count[0] >> 3) & 0x3F;
     size_t bytesToCopy = 64 - bufferIndex;
 
     size_t offset = 0;
@@ -221,7 +222,7 @@ void MD5_Update(MD5_Context_S* context, const u8* input, size_t inputLen)
         MD5_ProcessBlock(context->buffer, context);
 
         for (offset = bytesToCopy; offset + 63 < inputLen; offset += 64) {
-            MD5_ProcessBlock((u8*)&input[offset], context);
+            MD5_ProcessBlock(&input[offset], context);
         }
         bufferIndex = 0;
     }
@@ -239,9 +240,8 @@ void MD5_Update(MD5_Context_S* context, const u8* input, size_t inputLen)
 void MD5_Final(u8 digest[16], MD5_Context_S* context)
 {
     u8 bits[8];
-    for (int i = 0; i < 4; ++i) {
-        MD5_WordToBytes(&bits[i * 4], context->count[i < 2 ? 0 : 1]);
-    }
+    MD5_WordToBytes(&bits[0], context->count[0]);
+    MD5_WordToBytes(&bits[4], context->count[1]);
 
     int bufferIndex = (context->count[0] >> 3) & 0x3F;
     int paddingLength = (bufferIndex < 56) ? (56 - bufferIndex) : (120 - bufferIndex);

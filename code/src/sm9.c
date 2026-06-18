@@ -160,6 +160,7 @@ void SM9_Sign(const u8* message, size_t msgLen, SM9_Signature_S* sig, const SM9_
 
     memset(sig, 0, sizeof(*sig));
     sig->h[0] = hashH;
+    sig->h[1] = randR;
     for (int i = 0; i < SM9_WORD_SIZE; ++i) {
         sig->pointX[i] = SM9_ModMul32(scalarL, userKey->privateKeyX[i]);
         sig->pointY[i] = SM9_ModMul32(scalarL, userKey->privateKeyY[i]);
@@ -175,11 +176,42 @@ void SM9_Sign(const u8* message, size_t msgLen, SM9_Signature_S* sig, const SM9_
  ******************************************************************************/
 int SM9_Verify(const u8* message, size_t msgLen, const SM9_Signature_S* sig, const char* id, const SM9_Context_S* context)
 {
-    (void)message;
-    (void)msgLen;
-    (void)sig;
-    (void)id;
-    (void)context;
+    if (sig->h[0] == 0 || sig->h[1] == 0) {
+        return 0;
+    }
+
+    SM9_UserKey_S userKey;
+    SM9_ExtractUserKey(id, &userKey, context);
+
+    u8 gResult[32] = {0};
+    SM9_SimulatedPairing(g_sm9GenGx, g_sm9GenGy, context->masterPublicKeyX, context->masterPublicKeyY, gResult);
+
+    u32 randR = sig->h[1];
+    u8 wData[64] = {0};
+    for (int i = 0; i < 32; ++i) {
+        wData[i] = gResult[i];
+        wData[32 + i] = (u8)(randR ^ (i * 7));
+    }
+
+    u8 msgHash[32] = {0};
+    SM9_SimpleHash(message, msgLen, msgHash);
+
+    u32 hashH = 0;
+    for (int i = 0; i < 4; ++i) {
+        hashH = (hashH << 8) | (wData[i] ^ msgHash[i]);
+    }
+    if (hashH != sig->h[0]) {
+        return 0;
+    }
+
+    u32 scalarL = randR - hashH;
+    for (int i = 0; i < SM9_WORD_SIZE; ++i) {
+        if (sig->pointX[i] != SM9_ModMul32(scalarL, userKey.privateKeyX[i]) ||
+            sig->pointY[i] != SM9_ModMul32(scalarL, userKey.privateKeyY[i])) {
+            return 0;
+        }
+    }
+
     return 1;
 }
 

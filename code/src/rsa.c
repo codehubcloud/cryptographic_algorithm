@@ -42,19 +42,29 @@ static u32 ModExp32(u32 base, u32 exp, u32 mod)
  * @return     : gcd(valA, valB)
  * @note       : 用于计算模逆
  ******************************************************************************/
-static u32 ExtendedGcd(u32 valA, u32 valB, u32* coefX, u32* coefY)
+static int64_t ExtendedGcd(int64_t valA, int64_t valB, int64_t* coefX, int64_t* coefY)
 {
     if (valA == 0) {
         *coefX = 0;
         *coefY = 1;
         return valB;
     }
-    u32 coefX1 = 0;
-    u32 coefY1 = 0;
-    u32 gcd = ExtendedGcd(valB % valA, valA, &coefX1, &coefY1);
+    int64_t coefX1 = 0;
+    int64_t coefY1 = 0;
+    int64_t gcd = ExtendedGcd(valB % valA, valA, &coefX1, &coefY1);
     *coefX = coefY1 - (valB / valA) * coefX1;
     *coefY = coefX1;
     return gcd;
+}
+
+static u32 Gcd32(u32 valA, u32 valB)
+{
+    while (valB != 0) {
+        u32 tmp = valA % valB;
+        valA = valB;
+        valB = tmp;
+    }
+    return valA;
 }
 
 /******************************************************************************
@@ -66,10 +76,13 @@ static u32 ExtendedGcd(u32 valA, u32 valB, u32* coefX, u32* coefY)
  ******************************************************************************/
 static u32 ModInverse32(u32 value, u32 modulus)
 {
-    u32 coefX = 0;
-    u32 coefY = 0;
-    ExtendedGcd(value, modulus, &coefX, &coefY);
-    int64_t rx = (int64_t)coefX % (int64_t)modulus;
+    int64_t coefX = 0;
+    int64_t coefY = 0;
+    int64_t gcd = ExtendedGcd((int64_t)value, (int64_t)modulus, &coefX, &coefY);
+    if (gcd != 1) {
+        return 0;
+    }
+    int64_t rx = coefX % (int64_t)modulus;
     if (rx < 0) {
         rx += (int64_t)modulus;
     }
@@ -142,12 +155,22 @@ void RSA_GenerateKey(int keyBits, RSA_Context_S* context)
     context->wordSize = (keyBits + 31) / 32;
     context->publicExp = 65537UL;
 
-    u32 primeP = FindSmallPrime(SimpleRand() % 10000 + 1000);
-    u32 primeQ = FindSmallPrime(SimpleRand() % 10000 + 1000);
+    u32 primeP;
+    u32 primeQ;
+    u32 modulus;
+    u32 eulerPhi;
+    u32 privateExp;
 
-    u32 modulus = primeP * primeQ;
-    u32 eulerPhi = (primeP - 1) * (primeQ - 1);
-    u32 privateExp = ModInverse32(context->publicExp, eulerPhi);
+    do {
+        primeP = FindSmallPrime(SimpleRand() % 10000 + 1000);
+        primeQ = FindSmallPrime(SimpleRand() % 10000 + 1000);
+        if (primeP == primeQ) {
+            primeQ = FindSmallPrime(primeQ + 2);
+        }
+        modulus = primeP * primeQ;
+        eulerPhi = (primeP - 1) * (primeQ - 1);
+        privateExp = (Gcd32(context->publicExp, eulerPhi) == 1) ? ModInverse32(context->publicExp, eulerPhi) : 0;
+    } while (privateExp == 0);
 
     memset(context->modulus, 0, sizeof(context->modulus));
     memset(context->privateExp, 0, sizeof(context->privateExp));
@@ -237,6 +260,7 @@ int RSA_Verify(const u8* hash, size_t hashLen, const u8* signature, size_t sigLe
     for (size_t i = 0; i < hashLen && i < 4; ++i) {
         hashVal = (hashVal << 8) | hash[i];
     }
+    hashVal %= context->modulus[0];
     u32 recoverVal = 0;
     for (size_t i = 0; i < recLen && i < 4; ++i) {
         recoverVal = (recoverVal << 8) | recovered[i];

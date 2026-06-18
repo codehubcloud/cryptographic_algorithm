@@ -51,7 +51,7 @@ static inline u32 SHA256_RightShift(u32 value, int count)
  * @param[in]  : scheduleWord -- 消息调度数组的前 t-16 项
  * @param[out] : 无
  * @return     : 扩展后的消息字 W[t]
- * @note       : Σ1(x) = ROTR(17,x) ^ ROTR(19,x) ^ SHR(10,x)
+ * @note       : W[t] = σ1(W[t-2]) + W[t-7] + σ0(W[t-15]) + W[t-16]
  ******************************************************************************/
 static inline u32 SHA256_ScheduleExtend(const u32 scheduleWord[16], int wordIdx)
 {
@@ -67,11 +67,11 @@ static inline u32 SHA256_ScheduleExtend(const u32 scheduleWord[16], int wordIdx)
  * @param[in]  : value -- 输入值
  * @param[out] : 无
  * @return     : 计算结果
- * @note       : ROTR(2,x) ^ ROTR(13,x) ^ ROTR(22,x)
+ * @note       : ROTR(6,x) ^ ROTR(11,x) ^ ROTR(25,x)
  ******************************************************************************/
 static inline u32 SHA256_CapitalSigma1(u32 value)
 {
-    return SHA256_RightRotate(value, 2) ^ SHA256_RightRotate(value, 13) ^ SHA256_RightRotate(value, 22);
+    return SHA256_RightRotate(value, 6) ^ SHA256_RightRotate(value, 11) ^ SHA256_RightRotate(value, 25);
 }
 
 /******************************************************************************
@@ -79,11 +79,11 @@ static inline u32 SHA256_CapitalSigma1(u32 value)
  * @param[in]  : value -- 输入值
  * @param[out] : 无
  * @return     : 计算结果
- * @note       : ROTR(6,x) ^ ROTR(11,x) ^ ROTR(25,x)
+ * @note       : ROTR(2,x) ^ ROTR(13,x) ^ ROTR(22,x)
  ******************************************************************************/
 static inline u32 SHA256_CapitalSigma0(u32 value)
 {
-    return SHA256_RightRotate(value, 6) ^ SHA256_RightRotate(value, 11) ^ SHA256_RightRotate(value, 25);
+    return SHA256_RightRotate(value, 2) ^ SHA256_RightRotate(value, 13) ^ SHA256_RightRotate(value, 22);
 }
 
 /******************************************************************************
@@ -162,7 +162,7 @@ static void SHA256_ProcessBlock(const u8 blockData[64], SHA256_Context_S* contex
         if (round < 16) {
             word = scheduleWord[round];
         } else {
-            word = SHA256_ScheduleExtend(scheduleWord, round) + scheduleWord[(round - 16) & 0x0F];
+            word = SHA256_ScheduleExtend(scheduleWord, round);
             scheduleWord[round & 0x0F] = word;
         }
 
@@ -240,6 +240,7 @@ void SHA256_Update(SHA256_Context_S* context, const u8* input, size_t inputLen)
  ******************************************************************************/
 void SHA256_Final(u8 digest[32], SHA256_Context_S* context)
 {
+    u64 bitCountBig = context->bitCount;
     u8 paddingByte = 0x80;
     SHA256_Update(context, &paddingByte, 1);
 
@@ -249,7 +250,6 @@ void SHA256_Final(u8 digest[32], SHA256_Context_S* context)
     }
 
     u8 lengthBytes[8];
-    u64 bitCountBig = context->bitCount;
     for (int i = 7; i >= 0; --i) {
         lengthBytes[i] = (u8)(bitCountBig & 0xFF);
         bitCountBig >>= 8;

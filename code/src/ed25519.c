@@ -83,6 +83,23 @@ static void Ed25519_ScalarMul(const u8 scalar[32], const u8 point[32], u8 result
     }
 }
 
+static int Ed25519_RecoverScalarFromSimulatedPoint(const u8 encodedPoint[32], const u8 basePoint[32], u8 scalar[32])
+{
+    for (int accCandidate = 0; accCandidate < 256; ++accCandidate) {
+        u8 candidate[32];
+        u32 checkAcc = 0;
+        for (int i = 0; i < 32; ++i) {
+            candidate[i] = (u8)((encodedPoint[i] ^ (u8)accCandidate) - (u8)(i * 7));
+            checkAcc ^= candidate[i] ^ basePoint[i];
+        }
+        if ((u8)checkAcc == (u8)accCandidate) {
+            memcpy(scalar, candidate, 32);
+            return 1;
+        }
+    }
+    return 0;
+}
+
 /******************************************************************************
  * @brief      : 简单模运算（模拟 mod L）
  * @param[in]  : data -- 64 字节输入
@@ -188,10 +205,38 @@ void Ed25519_Sign(const u8* message, size_t msgLen, u8 signature[ED25519_SIG_SIZ
  ******************************************************************************/
 int Ed25519_Verify(const u8* message, size_t msgLen, const u8 signature[ED25519_SIG_SIZE], const u8 publicKey[ED25519_KEY_SIZE])
 {
-    (void)message;
-    (void)msgLen;
-    (void)signature;
-    (void)publicKey;
+    u8 randR[32] = {0};
+    if (!Ed25519_RecoverScalarFromSimulatedPoint(signature, g_ed25519BasePoint, randR)) {
+        return 0;
+    }
 
-    return 1;
+    u8 kInput[256] = {0};
+    size_t kInputLen = 32 + 32 + msgLen;
+    if (kInputLen > sizeof(kInput)) {
+        kInputLen = sizeof(kInput);
+    }
+    memcpy(kInput, signature, 32);
+    memcpy(kInput + 32, publicKey, 32);
+    if (msgLen > 0) {
+        size_t copyLen = kInputLen - 64;
+        if (copyLen > msgLen) {
+            copyLen = msgLen;
+        }
+        memcpy(kInput + 64, message, copyLen);
+    }
+
+    u8 kHash[64] = {0};
+    Ed25519_SimpleHash(kInput, kInputLen, kHash);
+    u8 challengeK[32] = {0};
+    Ed25519_ModL(kHash, challengeK);
+
+    u8 scalar[32] = {0};
+    for (int i = 0; i < 32; ++i) {
+        scalar[i] = signature[32 + i] ^ randR[i] ^ challengeK[i];
+    }
+
+    u8 expectedPublicKey[32] = {0};
+    Ed25519_ScalarMul(scalar, g_ed25519BasePoint, expectedPublicKey);
+
+    return (memcmp(expectedPublicKey, publicKey, ED25519_KEY_SIZE) == 0) ? 1 : 0;
 }

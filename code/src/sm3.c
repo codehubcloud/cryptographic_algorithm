@@ -12,7 +12,7 @@
 /* SM3 初始值 */
 static const u32 g_sm3InitValues[8] = {0x7380166FUL, 0x4914B2B9UL, 0x172442D7UL, 0xDA8A0600UL, 0xA96F30BCUL, 0x163138AAUL, 0xE38DEE4DUL, 0xB0FB0E4EUL};
 
-/* SM3 常数 T(j) */
+/* SM3 常数 ROTL(T(j), j)，用于压缩函数中的 SS1 计算 */
 static const u32 g_sm3Constants[64] = {0x79CC4519UL, 0xF3988A32UL, 0xE7311465UL, 0xCE6228CBUL, 0x9CA4F5A0UL, 0xAB2EFF1DUL, 0x83CD5650UL, 0x36222E44UL,
                                        0xF2C6F453UL, 0x164C183CUL, 0x8F890BD8UL, 0x58AAF535UL, 0x27823A0DUL, 0xDF7664E1UL, 0x86F040CDUL, 0x4D298D32UL,
                                        0xD0ACE675UL, 0xE4FF4E62UL, 0x5DFFCCC6UL, 0x9FD566CCUL, 0x21540F76UL, 0xC1D89F94UL, 0xB69318D2UL, 0x9226F629UL,
@@ -59,18 +59,34 @@ static inline u32 SM3_P1(u32 value)
 }
 
 /******************************************************************************
- * @brief      : SM3 压缩函数中的选择函数 F
+ * @brief      : SM3 压缩函数中的布尔函数 FF_j
  * @param[in]  : roundIdx -- 轮数索引, valX, valY, valZ -- 输入值
  * @param[out] : 无
  * @return     : j在0-15时返回 x^y^z，j在16-63时返回 (x&y)|(x&~z)|(y&z)
  * @note       : 无
  ******************************************************************************/
-static inline u32 SM3_SelectFunction(int roundIdx, u32 valX, u32 valY, u32 valZ)
+static inline u32 SM3_FF(int roundIdx, u32 valX, u32 valY, u32 valZ)
 {
     if (roundIdx < 16) {
         return valX ^ valY ^ valZ;
     } else {
-        return (valX & valY) | (valX & ~valZ) | (valY & valZ);
+        return (valX & valY) | (valX & valZ) | (valY & valZ);
+    }
+}
+
+/******************************************************************************
+ * @brief      : SM3 压缩函数中的布尔函数 GG_j
+ * @param[in]  : roundIdx -- 轮数索引, valX, valY, valZ -- 输入值
+ * @param[out] : 无
+ * @return     : j在0-15时返回 x^y^z，j在16-63时返回 (x&y)|(~x&z)
+ * @note       : 无
+ ******************************************************************************/
+static inline u32 SM3_GG(int roundIdx, u32 valX, u32 valY, u32 valZ)
+{
+    if (roundIdx < 16) {
+        return valX ^ valY ^ valZ;
+    } else {
+        return (valX & valY) | (~valX & valZ);
     }
 }
 
@@ -132,11 +148,10 @@ static void SM3_ProcessBlock(const u8 blockData[64], SM3_Context_S* context)
 
     /* 64 轮主循环 */
     for (int round = 0; round < 64; ++round) {
-        u32 ss1Value = SM3_LeftRotate((SM3_LeftRotate(stateValues[0], 12) + stateValues[4] + SM3_LeftRotate(g_sm3Constants[round], round % 32)) % 32, 7);
+        u32 ss1Value = SM3_LeftRotate(SM3_LeftRotate(stateValues[0], 12) + stateValues[4] + g_sm3Constants[round], 7);
         u32 ss2Value = ss1Value ^ SM3_LeftRotate(stateValues[0], 12);
-        u32 tt1Value = (SM3_SelectFunction(round, stateValues[0], stateValues[1], stateValues[2]) + stateValues[3] + ss2Value + messageWordW1[round])
-                       & 0xFFFFFFFFUL;
-        u32 tt2Value = (SM3_P0(stateValues[4]) + stateValues[5] + ss1Value + messageWordW[round]) & 0xFFFFFFFFUL;
+        u32 tt1Value = SM3_FF(round, stateValues[0], stateValues[1], stateValues[2]) + stateValues[3] + ss2Value + messageWordW1[round];
+        u32 tt2Value = SM3_GG(round, stateValues[4], stateValues[5], stateValues[6]) + stateValues[7] + ss1Value + messageWordW[round];
 
         stateValues[3] = stateValues[2];
         stateValues[2] = SM3_LeftRotate(stateValues[1], 9);
@@ -208,6 +223,8 @@ void SM3_Update(SM3_Context_S* context, const u8* input, size_t inputLen)
  ******************************************************************************/
 void SM3_Final(u8 digest[32], SM3_Context_S* context)
 {
+    u64 bitCountBig = context->bitCount;
+
     u8 paddingByte = 0x80;
     SM3_Update(context, &paddingByte, 1);
 
@@ -217,7 +234,6 @@ void SM3_Final(u8 digest[32], SM3_Context_S* context)
     }
 
     u8 lengthBytes[8];
-    u64 bitCountBig = context->bitCount;
     for (int i = 7; i >= 0; --i) {
         lengthBytes[i] = (u8)(bitCountBig & 0xFF);
         bitCountBig >>= 8;

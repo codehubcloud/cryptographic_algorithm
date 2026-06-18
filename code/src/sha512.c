@@ -92,11 +92,11 @@ static inline void SHA512_WordToBytes(u8 data[8], u64 value)
  * @param[in]  : value -- 输入值
  * @param[out] : 无
  * @return     : 计算结果
- * @note       : ROTR(14,x) ^ ROTR(34,x) ^ ROTR(39,x)
+ * @note       : ROTR(14,x) ^ ROTR(18,x) ^ ROTR(41,x)
  ******************************************************************************/
 static inline u64 SHA512_CapitalSigma1(u64 value)
 {
-    return SHA512_RightRotate(value, 14) ^ SHA512_RightRotate(value, 34) ^ SHA512_RightRotate(value, 39);
+    return SHA512_RightRotate(value, 14) ^ SHA512_RightRotate(value, 18) ^ SHA512_RightRotate(value, 41);
 }
 
 /******************************************************************************
@@ -215,10 +215,14 @@ void SHA512_Update(SHA512_Context_S* context, const u8* input, size_t inputLen)
         return;
     }
 
-    if (context->bitCount[0] + (inputLen << 3) < context->bitCount[0]) {
+    u64 lowBits = (u64)inputLen << 3;
+    u64 highBits = (u64)inputLen >> 61;
+
+    if (context->bitCount[0] + lowBits < context->bitCount[0]) {
         context->bitCount[1]++;
     }
-    context->bitCount[0] += inputLen << 3;
+    context->bitCount[0] += lowBits;
+    context->bitCount[1] += highBits;
 
     size_t bytesToCopy = 128 - context->bufferLen;
     size_t offset = 0;
@@ -246,6 +250,9 @@ void SHA512_Update(SHA512_Context_S* context, const u8* input, size_t inputLen)
  ******************************************************************************/
 void SHA512_Final(u8 digest[64], SHA512_Context_S* context)
 {
+    u64 highBitCount = context->bitCount[1];
+    u64 lowBitCount = context->bitCount[0];
+
     u8 paddingByte = 0x80;
     SHA512_Update(context, &paddingByte, 1);
 
@@ -255,22 +262,22 @@ void SHA512_Final(u8 digest[64], SHA512_Context_S* context)
     }
 
     u8 lengthBytes[16];
-    lengthBytes[0] = (u8)((context->bitCount[1] >> 56) & 0xFF);
-    lengthBytes[1] = (u8)((context->bitCount[1] >> 48) & 0xFF);
-    lengthBytes[2] = (u8)((context->bitCount[1] >> 40) & 0xFF);
-    lengthBytes[3] = (u8)((context->bitCount[1] >> 32) & 0xFF);
-    lengthBytes[4] = (u8)((context->bitCount[1] >> 24) & 0xFF);
-    lengthBytes[5] = (u8)((context->bitCount[1] >> 16) & 0xFF);
-    lengthBytes[6] = (u8)((context->bitCount[1] >> 8) & 0xFF);
-    lengthBytes[7] = (u8)(context->bitCount[1] & 0xFF);
-    lengthBytes[8] = (u8)((context->bitCount[0] >> 56) & 0xFF);
-    lengthBytes[9] = (u8)((context->bitCount[0] >> 48) & 0xFF);
-    lengthBytes[10] = (u8)((context->bitCount[0] >> 40) & 0xFF);
-    lengthBytes[11] = (u8)((context->bitCount[0] >> 32) & 0xFF);
-    lengthBytes[12] = (u8)((context->bitCount[0] >> 24) & 0xFF);
-    lengthBytes[13] = (u8)((context->bitCount[0] >> 16) & 0xFF);
-    lengthBytes[14] = (u8)((context->bitCount[0] >> 8) & 0xFF);
-    lengthBytes[15] = (u8)(context->bitCount[0] & 0xFF);
+    lengthBytes[0] = (u8)((highBitCount >> 56) & 0xFF);
+    lengthBytes[1] = (u8)((highBitCount >> 48) & 0xFF);
+    lengthBytes[2] = (u8)((highBitCount >> 40) & 0xFF);
+    lengthBytes[3] = (u8)((highBitCount >> 32) & 0xFF);
+    lengthBytes[4] = (u8)((highBitCount >> 24) & 0xFF);
+    lengthBytes[5] = (u8)((highBitCount >> 16) & 0xFF);
+    lengthBytes[6] = (u8)((highBitCount >> 8) & 0xFF);
+    lengthBytes[7] = (u8)(highBitCount & 0xFF);
+    lengthBytes[8] = (u8)((lowBitCount >> 56) & 0xFF);
+    lengthBytes[9] = (u8)((lowBitCount >> 48) & 0xFF);
+    lengthBytes[10] = (u8)((lowBitCount >> 40) & 0xFF);
+    lengthBytes[11] = (u8)((lowBitCount >> 32) & 0xFF);
+    lengthBytes[12] = (u8)((lowBitCount >> 24) & 0xFF);
+    lengthBytes[13] = (u8)((lowBitCount >> 16) & 0xFF);
+    lengthBytes[14] = (u8)((lowBitCount >> 8) & 0xFF);
+    lengthBytes[15] = (u8)(lowBitCount & 0xFF);
 
     SHA512_Update(context, lengthBytes, 16);
 
